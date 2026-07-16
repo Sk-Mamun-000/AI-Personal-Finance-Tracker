@@ -1,0 +1,42 @@
+version: "3.9"
+
+services:
+  backend:
+    build: .
+    container_name: finance_tracker_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+psycopg2://finance_user:finance_pass@db:5432/finance_tracker
+      - SECRET_KEY=${SECRET_KEY:-change-this-in-production}
+    depends_on:
+      - db
+    volumes:
+      - ./datasets:/app/datasets
+      - ./reports:/app/reports
+
+  frontend:
+    build: .
+    container_name: finance_tracker_frontend
+    command: streamlit run frontend/streamlit_app.py --server.port 8501 --server.address 0.0.0.0
+    ports:
+      - "8501:8501"
+    environment:
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      - backend
+
+  db:
+    image: postgres:16-alpine
+    container_name: finance_tracker_db
+    environment:
+      - POSTGRES_USER=finance_user
+      - POSTGRES_PASSWORD=finance_pass
+      - POSTGRES_DB=finance_tracker
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
